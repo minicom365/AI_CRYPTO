@@ -1,0 +1,8 @@
+key
+*log
+.env
+.venv
+.vscode
+__pycache__
+tempCodeRunnerFile.py
+test.py

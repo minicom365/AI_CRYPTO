@@ -1,0 +1,9 @@
+python-dotenv
+openai
+pyupbit
+pyyaml
+ta
+bs4
+gitpython
+translate
+rich
