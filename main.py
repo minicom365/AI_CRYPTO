@@ -40,7 +40,7 @@ install(show_locals=True)
 log_manager = LogManager(loggerName="__main__", configPath='logger.yaml')
 logger = log_manager.getLogger()
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:\n%(message)s\n')
 
 rich_handler = RichHandler(level=logging.INFO, rich_tracebacks=True)
 rich_handler.setLevel(logging.INFO)
@@ -137,19 +137,22 @@ def get_ai():
     return ai
 
 
-def ai_translate(text):
-    params = {
-        'q': text,
-        'source': 'en',
-        'target': 'ko',
-        'format': 'text'
-    }
+def translate(text):
+    try:
+        params = {
+            'q': text,
+            'source': 'en',
+            'target': 'ko',
+            'format': 'text'
+        }
 
-    # API 호출
-    response = requests.post('https://libretranslate.com/translate', data=params)
+        # API 호출
+        response = requests.post('https://libretranslate.com/translate', data=params)
 
-    # 번역 결과 출력
-    return response.json()['translatedText']
+        # 번역 결과 출력
+        return response.json()['translatedText']
+    except:
+        return text
 
 
 def get_chance(ticker):
@@ -176,7 +179,7 @@ def ai_make_message(ticker: str, balances: dict):
         "realized_profit": calculate_realized_profit(ticker),
         "orderbook": get_orderboot(ticker),
         "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee},
-        "resent_news": get_recent_news(20),
+        "resent_news": get_recent_news(20, api_key=os.getenv("CRYPTOPANIC_API_KEYS")),
         "FGI": get_fear_greed_index(5)})
 
 
@@ -190,7 +193,7 @@ def ai_Query(instruct: str, messages: str) -> dict:
             messages=[{"role": "user", "content": f"{messages}\n\n{instruct}"}]
         )
         if hasattr(response, "error"):
-            raise Exception(response.error.message)
+            raise Exception(response.error["message"])
         logger.debug(response.choices[0].message.content)
         return json.loads(filter_json(response.choices[0].message.content))
 
@@ -321,81 +324,87 @@ def main():
     logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
 
     while True:
-        next_trade_wait = 0
-        balances = get_balances(TICKER)
-        if balances[TICKER] == 0:
-            if first_run:
-                logger.info("### 아직 코인을 구매하지 않았습니다 ###")
+        try:
+            next_trade_wait = 0
+            balances = get_balances(TICKER)
+            if balances[TICKER] == 0:
+                if first_run:
+                    logger.info("### 아직 코인을 구매하지 않았습니다 ###")
+                else:
+                    logger.info("### 모든 자산 매도 완료 ###")
+            logger.info(f"### 현시점 수익률: {calculate_realized_profit(TICKER) * 100}% ###")
+
+            logger.info("### 데이터 수집 시작 ###")
+            message = ai_make_message(TICKER, balances)
+            logger.info("### 데이터 수집 완료 ###")
+
+            logger.info("### AI 쿼리 시도 ###")
+            ai_answer = ai_Query(config["ai"]["instruct"], message)
+            if ai_answer:
+                price = get_current_price(TICKER)
+                decision = ai_answer.get("decision").upper()
+                target_price = ai_answer.get("target_price", None) or price
+                reason = Translator(to_lang="ko").translate(ai_answer.get("reason"))
+                percent = ai_answer.get("percent", 1.0) * 100
+                next_trade_wait = ai_answer.get("next_trade_wait", 0)
+                next_trade_time = (datetime.now() + timedelta(minutes=next_trade_wait)).strftime("%H:%M:%S")
+                alert_price = {f: ai_answer.get(f"alert_price_{f}") for f in ["low", "high"]}
+                alert_price_rate = {f: get_fluctuation_rate(price, alert_price[f]) for f in ["low", "high"]}
+
+                logger.info(f"### AI 결정: {decision} ###", )
+                logger.info(f"### 현재 시세: {price} ###")
+                logger.info(f"### 목표 금액: {target_price} ###")
+                logger.info(f"### 이유: {reason} ###")
+                logger.info(f"### 거래 비율: {percent}% ###")
+                logger.info(f"### 다음 거래 대기 시간: {next_trade_wait}분 ({next_trade_time}) ###")
+                logger.info(f"### 대기 취소 금액(하한가): {alert_price['low']} ({alert_price_rate['low']:.2f}%) ###")
+                logger.info(f"### 대기 취소 금액(상한가): {alert_price['high']} ({alert_price_rate['high']:.2f}%) ###")
+
+                if decision == "BUY":
+                    first_run = not first_run
+                    target_price = min(target_price, price)
+                elif decision == "SELL":
+                    target_price = max(target_price, price)
+                if not TEST_FLAG and decision != 'HOLD':
+                    results = execute_trade(decision, target_price, percent, balances)
+                    logger.debug(results)
+                    log_trade(results, reason)
             else:
-                logger.info("### 모든 자산 매도 완료 ###")
-        logger.info(f"### 현시점 수익률: {calculate_realized_profit(TICKER) * 100}% ###")
+                logger.error("### 결정 실패 - AI 응답 없음 ###")
 
-        logger.info("### 데이터 수집 시작 ###")
-        message = ai_make_message(TICKER, balances)
-        logger.info("### 데이터 수집 완료 ###")
-
-        logger.info("### AI 쿼리 시도 ###")
-        ai_answer = ai_Query(config["ai"]["instruct"], message)
-        if ai_answer:
-            price = get_current_price(TICKER)
-            decision = ai_answer.get("decision")
-            target_price = ai_answer.get("target_price", None)
-            reason = Translator(to_lang="ko").translate(ai_answer.get("reason"))
-            percent = ai_answer.get("percent", 1.0)
-            next_trade_wait = ai_answer.get("next_trade_wait", 0)
-            next_trade_time = (datetime.now() + timedelta(minutes=next_trade_wait)).strftime("%H:%M:%S")
-
-            logger.info(f"### AI 결정: {decision.upper()} ###", )
-            logger.info(f"### 현재 시세: {price} ###")
-            logger.info(f"### 목표 금액: {target_price if target_price else '시장가'} ###")
-            logger.info(f"### 이유: {reason} ###")
-            logger.info(f"### 거래 비율: {percent * 100}% ###")
-            logger.info(f"### 다음 거래 대기 시간: {next_trade_wait}분 ({next_trade_time}) ###")
-            logger.info(f"### 대기 취소 금액(저가): {ai_answer["alert_price_low"]} ({
-                        get_fluctuation_rate(price, ai_answer["alert_price_low"]):.2f}%) ###")
-            logger.info(f"### 대기 취소 금액(고가): {ai_answer["alert_price_high"]} ({
-                        get_fluctuation_rate(price, ai_answer["alert_price_high"]):.2f}%) ###")
-
-            if decision == "buy":
-                first_run = not first_run
-                target_price = min(target_price, get_current_price(TICKER))
-            elif decision == "sell":
-                target_price = max(target_price, get_current_price(TICKER))
-            if not TEST_FLAG and decision != 'hold':
-                results = execute_trade(decision, target_price, percent, balances)
-                logger.debug(results)
-                log_trade(results, reason)
-        else:
-            logger.error("### 결정 실패 - AI 응답 없음 ###")
-
+        except Exception as E:
+            Console().print_exception(show_locals=True)
         last_trade_time = time.time()
         wait_time = 60 * next_trade_wait if next_trade_wait else 60
         pbar = tqdm(total=wait_time, unit='s')
         pbar.set_description(f'다음 거래까지 대기:')
 
         while True:
-            price = get_current_price(TICKER)
+            try:
+                price = get_current_price(TICKER)
 
-            # AI 응답에 따른 가격 경고
-            if ai_answer:
-                alert_price_high = ai_answer.get("alert_price_high")
-                alert_price_low = ai_answer.get("alert_price_low")
+                # AI 응답에 따른 가격 경고
+                if ai_answer:
+                    alert_price_high = ai_answer.get("alert_price_high")
+                    alert_price_low = ai_answer.get("alert_price_low")
 
-                if price > alert_price_high:
-                    logger.warning(f'### 가격 급상승 감지 --  ### {price} > {alert_price_high}')
+                    if price > alert_price_high:
+                        logger.warning(f'### 가격 급상승 감지 --  ### {price} > {alert_price_high}')
+                        break
+                    elif price < alert_price_low:
+                        logger.warning(f'### 가격 급하락 감지 --  ### {price} < {alert_price_low}')
+                        break
+
+                remaining_time = (last_trade_time + wait_time) - time.time()
+                if remaining_time > 0:
+                    elapsed_time = time.time() - last_trade_time
+                    pbar.n = int(elapsed_time)
+                    pbar.refresh()
+                    time.sleep(1)  # 1초 대기 후 다음 반복
+                else:
                     break
-                elif price < alert_price_low:
-                    logger.warning(f'### 가격 급하락 감지 --  ### {price} < {alert_price_low}')
-                    break
-
-            remaining_time = (last_trade_time + wait_time) - time.time()
-            if remaining_time > 0:
-                elapsed_time = time.time() - last_trade_time
-                pbar.n = int(elapsed_time)
-                pbar.refresh()
-                time.sleep(1)  # 1초 대기 후 다음 반복
-            else:
-                break
+            except:
+                pass
 
         pbar.close()  # Progress bar 닫기
 

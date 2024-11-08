@@ -7,9 +7,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-API_KEY = ""  # API 키가 없을 경우 빈 문자열로 설정
-
-
 def init_driver():
     """
     Chrome 웹드라이버를 초기화하고 반환합니다.
@@ -46,15 +43,15 @@ def get_fear_greed_index(limit: int = 1) -> dict:
         return None
 
 
-def get_recent_news(num: int = 5, ticker: str = None) -> list[str]:
+def get_recent_news(num: int = 5, ticker: str = None, api_key: str = None) -> list[str]:
     """
     비트코인 관련 최신 뉴스를 API 키 유무에 따라 가져옵니다.
     """
-    if API_KEY:
+    if api_key:
         # Cryptopanic API 사용
         url = 'https://cryptopanic.com/api/v1/posts/'
         params = {
-            'auth_token': API_KEY,
+            'auth_token': api_key,
             'filter': 'news',
             'currencies': ticker,
             'kind': 'news',
