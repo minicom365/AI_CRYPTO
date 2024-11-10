@@ -30,6 +30,7 @@ def update_repo(repo_url: str, repo_path: str, username: str, password: str):
             origin = repo.remotes.origin
             origin.pull()
             print("업데이트 완료.")
+            return True
         else:
             print("업데이트가 필요하지 않습니다.")
 
@@ -43,23 +44,22 @@ def do_update():
     username = os.getenv("GIT_USERNAME")
     password = os.getenv("GIT_PASSWORD")
 
-    update_repo(repo_url, root_dir, username, password)
+    if update_repo(repo_url, root_dir, username, password):
+        try:
+            # requirements.txt 파일 설치
+            requirements_path = os.path.join(root_dir, 'requirements.txt')
+            venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe')
 
-    try:
-        # requirements.txt 파일 설치
-        requirements_path = os.path.join(root_dir, 'requirements.txt')
-        venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe')
+            subprocess.check_call([venv_python, "-m", "pip", "install", "-r", requirements_path])
+            print("필요한 패키지가 성공적으로 설치되었습니다.")
 
-        subprocess.check_call([venv_python, "-m", "pip", "install", "-r", requirements_path])
-        print("필요한 패키지가 성공적으로 설치되었습니다.")
+            # 새 스크립트를 비동기적으로 실행
+            subprocess.Popen([venv_python, os.path.join(root_dir, 'main.py')])
+            print("새 코드가 성공적으로 실행되었습니다.")
+            sys.exit()  # 현재 스크립트 종료
 
-        # 새 스크립트를 비동기적으로 실행
-        subprocess.Popen([venv_python, os.path.join(root_dir, 'main.py')])
-        print("새 코드가 성공적으로 실행되었습니다.")
-        sys.exit()  # 현재 스크립트 종료
-
-    except Exception as e:
-        print(f"새 코드 실행 중 오류 발생: {e}")
+        except Exception as e:
+            print(f"새 코드 실행 중 오류 발생: {e}")
 
 
 if __name__ == "__main__":

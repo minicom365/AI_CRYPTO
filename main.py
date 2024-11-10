@@ -12,6 +12,7 @@ import logging
 from rich.logging import RichHandler
 from rich.console import Console
 from rich.traceback import install
+from auto_update import do_update
 from logger import LogManager
 from indicator import add_indicators
 from crawler import *
@@ -27,7 +28,7 @@ with open("config.yaml", "r", encoding='utf-8') as file:
 TEST_FLAG = False  # 테스트 모드 플래그
 UPBIT_ACCESS_KEY = os.getenv("UPBIT_ACCESS_KEY")
 UPBIT_SECRET_KEY = os.getenv("UPBIT_SECRET_KEY")
-CURRENCY = "DOGE"  # 거래할 티커
+CURRENCY = "BTC"  # 거래할 티커
 UNIT_CURRENCY = "KRW"
 TICKER = UNIT_CURRENCY + "-" + CURRENCY
 
@@ -169,6 +170,7 @@ def ai_make_message(ticker: str, balances: dict):
     }
     bid_fee, ask_fee = [get_chance(ticker)[x] for x in ['bid_fee', 'ask_fee']]
     return json.dumps({
+        "ticker": ticker,
         "now_time": str(datetime.now().astimezone()),
         "now_price": get_current_price(ticker),
         "data": data_combined,
@@ -193,9 +195,10 @@ def ai_Query(instruct: str, messages: str) -> dict:
             messages=[{"role": "user", "content": f"{messages}\n\n{instruct}"}]
         )
         if hasattr(response, "error"):
-            raise Exception(response.error["message"])
-        logger.debug(response.choices[0].message.content)
-        return json.loads(filter_json(response.choices[0].message.content))
+            logger.error("AI 매매 결정 중 오류 발생: %s", response.error['message'])
+        else:
+            logger.debug(response.choices[0].message.content)
+            return json.loads(filter_json(response.choices[0].message.content))
 
     except Exception as e:
         logger.error("AI 매매 결정 중 오류 발생: %s", str(e))
@@ -213,20 +216,20 @@ def execute_trade(decision, target_price, percent, balances):
     asset_balance = balances.get(TICKER, 0)
     trade_amount = 0
 
-    if decision == "buy":
+    if decision == "BUY":
         if krw_balance <= 5000:
             logger.warning("### 거래 실패 - 충분한 자금이 없습니다 ###")
             return
         trade_amount = min(krw_balance * percent * 0.9995, krw_balance)
 
-    elif decision == "sell":
+    elif decision == "SELL":
         est_krw_value = asset_balance * percent * get_current_price(TICKER)
         if est_krw_value <= 5000:
             logger.warning("### 거래 실패 - 충분한 자산이 없습니다 ###")
             return
         trade_amount = asset_balance * percent
 
-    elif decision == "hold":
+    elif decision == "HOLD":
         logger.info("### 보유 유지 ###")
         return
 
@@ -246,10 +249,10 @@ def place_order(order_type, amount, price=None):
             raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
 
         # 주문 실행
-        if order_type == "buy":
+        if order_type == "BUY":
             response = (upbit.buy_market_order(TICKER, amount) if price is None
                         else upbit.buy_limit_order(TICKER, price, amount / price))
-        elif order_type == "sell":
+        elif order_type == "SELL":
             response = (upbit.sell_market_order(TICKER, amount) if price is None
                         else upbit.sell_limit_order(TICKER, price, amount))
         else:
@@ -379,6 +382,8 @@ def main():
         pbar = tqdm(total=wait_time, unit='s')
         pbar.set_description(f'다음 거래까지 대기:')
 
+        if os.getenv("AUTO_UPDATE"):
+            do_update()
         while True:
             try:
                 price = get_current_price(TICKER)
