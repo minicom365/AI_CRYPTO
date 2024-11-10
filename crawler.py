@@ -1,16 +1,30 @@
+import importlib
 import requests
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 def init_driver():
     """
     Chrome 웹드라이버를 초기화하고 반환합니다.
     """
+    # 임포트할 모듈 및 객체 리스트
+    modules = [
+        "selenium.webdriver",
+        "selenium.webdriver.chrome.service.Service",
+        "selenium.webdriver.common.by.By",
+        "selenium.webdriver.support.ui.WebDriverWait",
+        "selenium.webdriver.support.expected_conditions.EC",
+        "webdriver_manager.chrome.ChromeDriverManager",
+    ]
+
+    # 동적 임포트 및 변수 할당
+    for module_path in modules:
+        *module_parts, attr_name = module_path.split('.')
+        module_name = '.'.join(module_parts)
+
+        # 모듈 임포트 후 해당 속성을 전역 변수로 할당
+        module = importlib.import_module(module_name)
+        globals()[attr_name] = getattr(module, attr_name)
+
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
