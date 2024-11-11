@@ -304,25 +304,6 @@ def get_last_buy_trade():
     return next((trade for trade in reversed(trade_history) if trade['type'] == 'buy'), None)
 
 
-def place_order(order_type, amount, price=None):
-    """주어진 주문 유형에 따라 지정가 또는 시장가 주문을 실행합니다."""
-    if order_type == "buy":
-        if price is None:  # 시장가 매수
-            response = upbit.buy_market_order(TICKER, amount)
-        else:  # 지정가 매수
-            volume = amount / price  # 매수할 개수 계산
-            logger.debug((TICKER, price, volume))
-            response = upbit.buy_limit_order(TICKER, price, volume)
-    elif order_type == "sell":
-        if price is None:  # 시장가 매도
-            response = upbit.sell_market_order(TICKER, amount)
-        else:  # 지정가 매도
-            response = upbit.sell_limit_order(TICKER, price, amount)
-    else:
-        return None
-    return response
-
-
 def get_current_price(ticker):
     """현재 가격을 조회합니다."""
     return pyupbit.get_current_price(ticker)
