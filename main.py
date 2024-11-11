@@ -261,10 +261,10 @@ def place_order(order_type, amount, price=None):
 
         # 주문 실행
         if order_type == "BUY":
-            response = (upbit.buy_market_order(TICKER, amount) if price is None
+            response = (upbit.buy_market_order(TICKER, amount) if price == None
                         else upbit.buy_limit_order(TICKER, price, amount / price))
         elif order_type == "SELL":
-            response = (upbit.sell_market_order(TICKER, amount) if price is None
+            response = (upbit.sell_market_order(TICKER, amount) if price == None
                         else upbit.sell_limit_order(TICKER, price, amount))
         else:
             raise ValueError("올바르지 않은 주문 유형입니다.")
@@ -339,6 +339,7 @@ def main():
 
     while True:
         try:
+            results = None
             next_trade_wait = 0
             balances = get_balances(TICKER)
             if balances[TICKER] == 0:
@@ -388,8 +389,9 @@ def main():
 
         except Exception as E:
             Console().print_exception(show_locals=True)
+
         last_trade_time = time.time()
-        wait_time = 60 * next_trade_wait if next_trade_wait else 60
+        wait_time = 60 * next_trade_wait if next_trade_wait and results else 60
         pbar = tqdm(total=wait_time, unit='s')
         pbar.set_description(f'다음 거래까지 대기:')
 

@@ -13,7 +13,7 @@ ai:
     When the current action is over, the price may become too low or too high while waiting for the next_trade_wait, requiring quick action.
     Please let me know the lowest, maximum notification_price I should be careful about to deal with this case.
     But don't let these two values differ too much from the present price.
-
+    Of course, if you have zero, you can't sell it
     
     I have no knowledge of investment, so I intend to proceed with the investment based on your response. Please think about the best and answer.
     
