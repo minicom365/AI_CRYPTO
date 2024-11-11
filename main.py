@@ -32,10 +32,6 @@ CURRENCY = "BTC"  # 거래할 티커
 UNIT_CURRENCY = "KRW"
 TICKER = UNIT_CURRENCY + "-" + CURRENCY
 
-
-# Upbit Client 초기화
-upbit = pyupbit.Upbit(UPBIT_ACCESS_KEY, UPBIT_SECRET_KEY)
-
 # 로그 설정
 install(show_locals=True)
 log_manager = LogManager(loggerName="__main__", configPath='logger.yaml')
@@ -54,6 +50,21 @@ logger.addHandler(file_handler)
 
 # 거래 이력 저장
 trade_history = []
+
+
+while True:
+    # Upbit Client 초기화
+    upbit = pyupbit.Upbit(UPBIT_ACCESS_KEY, UPBIT_SECRET_KEY)
+    response = upbit.get_balances()
+    if 'error' in response:
+        logger.error(response['error'])
+        if response['error']['name']:
+            ip = requests.get('https://checkip.amazonaws.com').text.strip()
+            logger.info(f"ip가 등록되지 않았습니다: {ip}")
+        logger.info("30초 추가대기")
+        time.sleep(30)
+    else:
+        break
 
 
 def calculate_realized_profit(ticker=None):
