@@ -199,59 +199,79 @@ def ai_make_message(ticker: str, balances: dict):
 def ai_Query(instruct: str, messages: str) -> dict:
     """AI에 차트 데이터 및 잔고를 전달하여 매매 결정을 요청합니다."""
     ai = get_ai()
+
+    def chkerr(response):
+        if hasattr(response, "error"):
+            message = response.error['message']
+            if type(message) == dict:
+                message = message.get("error", {}).get("message")
+            if "Rate limit exceeded" in message:
+                remaining, limit, reset = [response.headers.get(
+                    f"x-ratelimit-{x}") for x in ["remaining", "limit", "reset"]]
+                logger.error(f"AI 매매 결정 중 오류 발생: {message}")
+                logger.error(f"AI 사용량 만료: {remaining}/{limit}")
+                logger.error(f"다음 갱신: {reset}")
+            else:
+                logger.error("AI 매매 결정 중 오류 발생: %s", message if message else response.error['message'])
+            raise StopIteration()
+        elif response.choices:
+            return response.choices[0].message.content
+
     try:
         logger.debug(messages)
         response = ai.chat.completions.create(
             model=config["ai"]["model"],
             messages=[{"role": "user", "content": f"{messages}\n\n{instruct}"}]
         )
-        if hasattr(response, "error"):
-            logger.error("AI 매매 결정 중 오류 발생: %s", response.error['message'])
-        else:
-            logger.debug(response.choices[0].message.content)
-            return json.loads(filter_json(response.choices[0].message.content))
 
+        return json.loads(filter_json(chkerr(response)))
+
+    except StopIteration:
+        return None
     except Exception as e:
-        logger.error("AI 매매 결정 중 오류 발생: %s", str(e))
-        Console().print_exception(show_locals=True)
+        if "Error code: 429" in str(e):
+            # 이부분 어떻게 에러가 발생하는지 명확치않음
+            chkerr(response)
+        elif e != "No active exception to reraise":
+            logger.error(f"AI 매매 결정 중 오류 발생: {e}")
         return None
 
 
-def execute_trade(decision, target_price, percent, balances):
+def execute_trade(ticker, decision, target_price, percent, balances):
     """AI의 매매 결정과 퍼센트를 기반으로 거래를 실행합니다."""
     if TEST_FLAG:
         logger.info("### 테스트 모드 - 실제 거래는 실행되지 않습니다 ###")
         return
 
     krw_balance = balances.get("KRW", 0)
-    asset_balance = balances.get(TICKER, 0)
+    asset_balance = balances.get(ticker, 0)
     trade_amount = 0
 
-    if decision == "BUY":
+    if decision == "buy":
         if krw_balance <= 5000:
             logger.warning("### 거래 실패 - 충분한 자금이 없습니다 ###")
             return
         trade_amount = min(krw_balance * percent * 0.9995, krw_balance)
 
-    elif decision == "SELL":
-        est_krw_value = asset_balance * percent * get_current_price(TICKER)
+    elif decision == "sell":
+        est_krw_value = asset_balance * percent * get_current_price(ticker)
         if est_krw_value <= 5000:
             logger.warning("### 거래 실패 - 충분한 자산이 없습니다 ###")
             return
         trade_amount = asset_balance * percent
 
-    elif decision == "HOLD":
+    elif decision == "hold":
         logger.info("### 보유 유지 ###")
         return
 
-    return place_order(decision, trade_amount, target_price)
+    return place_order(ticker, decision, trade_amount, target_price)
 
 
-def place_order(order_type, amount, price=None):
+def place_order(ticker: str, order_type: str, amount: float, price: float = None):
     """주문 유형에 따라 지정가 또는 시장가 주문을 실행합니다. 최소 주문 가능 금액을 확인합니다."""
     try:
         # 주문 가능 정보 조회 및 최소 주문 금액 확인
-        chance_info = upbit.get_chance(TICKER)
+        chance_info = upbit.get_chance(ticker)
         if not chance_info:
             raise ValueError("주문 가능 정보 조회에 실패했습니다.")
 
@@ -260,19 +280,20 @@ def place_order(order_type, amount, price=None):
             raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
 
         # 주문 실행
-        if order_type == "BUY":
-            response = (upbit.buy_market_order(TICKER, amount) if price == None
-                        else upbit.buy_limit_order(TICKER, price, amount / price))
-        elif order_type == "SELL":
-            response = (upbit.sell_market_order(TICKER, amount) if price == None
-                        else upbit.sell_limit_order(TICKER, price, amount))
+        if order_type == "buy":
+            response = (upbit.buy_market_order(ticker, amount) if price == None
+                        else upbit.buy_limit_order(ticker, price, amount / price))
+        elif order_type == "sell":
+            response = (upbit.sell_market_order(ticker, amount) if price == None
+                        else upbit.sell_limit_order(ticker, price, amount))
         else:
             raise ValueError("올바르지 않은 주문 유형입니다.")
 
         return response
 
     except Exception as e:
-        logger.error(f"주문 처리 중 오류 발생: {str(e)}")
+        logger.error(f"주문 처리 중 오류 발생: {e}")
+        Console().print_exception(show_locals=True)
         return None
 
 
@@ -312,6 +333,11 @@ def get_current_price(ticker):
 def get_fluctuation_rate(now, to): return (to - now) / now * 100
 
 
+def translate(message: str):
+    result = Translator(to_lang="ko").translate(message)
+    return result if not 'MYMEMORY WARNING:' in result else message
+
+
 def main():
     logger.debug("디버깅으로 기록")
     """주기적으로 매매 결정을 실행합니다 (모든 보유 자산을 매도할 때까지)"""
@@ -338,16 +364,16 @@ def main():
             ai_answer = ai_Query(config["ai"]["instruct"], message)
             if ai_answer:
                 price = get_current_price(TICKER)
-                decision = ai_answer.get("decision").upper()
+                decision = ai_answer.get("decision")
                 target_price = ai_answer.get("target_price", None) or price
-                reason = Translator(to_lang="ko").translate(ai_answer.get("reason"))
+                reason = translate(ai_answer.get("reason"))
                 percent = ai_answer.get("percent", 1.0) * 100
                 next_trade_wait = ai_answer.get("next_trade_wait", 0)
                 next_trade_time = (datetime.now() + timedelta(minutes=next_trade_wait)).strftime("%H:%M:%S")
                 alert_price = {f: ai_answer.get(f"alert_price_{f}") for f in ["low", "high"]}
                 alert_price_rate = {f: get_fluctuation_rate(price, alert_price[f]) for f in ["low", "high"]}
 
-                logger.info(f"### AI 결정: {decision} ###", )
+                logger.info(f"### AI 결정: {decision.upper()} ###", )
                 logger.info(f"### 현재 시세: {price} ###")
                 logger.info(f"### 목표 금액: {target_price} ###")
                 logger.info(f"### 이유: {reason} ###")
@@ -356,15 +382,17 @@ def main():
                 logger.info(f"### 대기 취소 금액(하한가): {alert_price['low']} ({alert_price_rate['low']:.2f}%) ###")
                 logger.info(f"### 대기 취소 금액(상한가): {alert_price['high']} ({alert_price_rate['high']:.2f}%) ###")
 
-                if decision == "BUY":
+                if decision == "buy":
                     first_run = not first_run
                     target_price = min(target_price, price)
-                elif decision == "SELL":
+                elif decision == "sell":
                     target_price = max(target_price, price)
-                if not TEST_FLAG and decision != 'HOLD':
-                    results = execute_trade(decision, target_price, percent, balances)
+                if not TEST_FLAG and decision != 'hold':
+                    results = execute_trade(TICKER, decision, target_price, percent, balances)
                     logger.debug(results)
                     log_trade(results, reason)
+                    if not results:
+                        next_trade_wait = None
             else:
                 logger.error("### 결정 실패 - AI 응답 없음 ###")
 
@@ -372,7 +400,7 @@ def main():
             Console().print_exception(show_locals=True)
 
         last_trade_time = time.time()
-        wait_time = 60 * next_trade_wait if next_trade_wait and results else 60
+        wait_time = 60 * next_trade_wait if next_trade_wait else 60
         pbar = tqdm(total=wait_time, unit='s')
         pbar.set_description(f'다음 거래까지 대기:')
 
