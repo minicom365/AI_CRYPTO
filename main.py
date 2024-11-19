@@ -279,7 +279,7 @@ def place_order(ticker: str, order_type: str, amount: float, price: float = None
         if not chance_info:
             raise ValueError("주문 가능 정보 조회에 실패했습니다.")
 
-        min_order_amount = chance_info['market'][trade_trans[order_type]]['min_total']
+        min_order_amount = float(chance_info['market'][trade_trans[order_type]]['min_total'])
         if amount < min_order_amount:
             raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
 
@@ -371,7 +371,7 @@ def main():
                 decision = ai_answer.get("decision")
                 target_price = ai_answer.get("target_price", None) or price
                 reason = translate(ai_answer.get("reason"))
-                percent = ai_answer.get("percent", 1.0) * 100
+                percent = ai_answer.get("percent", 1.0)
                 next_trade_wait = ai_answer.get("next_trade_wait", 0)
                 next_trade_time = (datetime.now() + timedelta(minutes=next_trade_wait)).strftime("%H:%M:%S")
                 alert_price = {f: ai_answer.get(f"alert_price_{f}") for f in ["low", "high"]}
@@ -381,7 +381,7 @@ def main():
                 logger.info(f"### 현재 시세: {price} ###")
                 logger.info(f"### 목표 금액: {target_price} ###")
                 logger.info(f"### 이유: {reason} ###")
-                logger.info(f"### 거래 비율: {percent}% ###")
+                logger.info(f"### 거래 비율: {percent * 100}% ###")
                 logger.info(f"### 다음 거래 대기 시간: {next_trade_wait}분 ({next_trade_time}) ###")
                 logger.info(f"### 대기 취소 금액(하한가): {alert_price['low']} ({alert_price_rate['low']:.2f}%) ###")
                 logger.info(f"### 대기 취소 금액(상한가): {alert_price['high']} ({alert_price_rate['high']:.2f}%) ###")
