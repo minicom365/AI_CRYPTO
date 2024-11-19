@@ -270,12 +270,16 @@ def execute_trade(ticker, decision, target_price, percent, balances):
 def place_order(ticker: str, order_type: str, amount: float, price: float = None):
     """주문 유형에 따라 지정가 또는 시장가 주문을 실행합니다. 최소 주문 가능 금액을 확인합니다."""
     try:
+        trade_trans = {
+            "buy": "bid",
+            "sell": "ask"
+        }
         # 주문 가능 정보 조회 및 최소 주문 금액 확인
         chance_info = upbit.get_chance(ticker)
         if not chance_info:
             raise ValueError("주문 가능 정보 조회에 실패했습니다.")
 
-        min_order_amount = chance_info['market'][order_type]['min_total']
+        min_order_amount = chance_info['market'][trade_trans[order_type]]['min_total']
         if amount < min_order_amount:
             raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
 
