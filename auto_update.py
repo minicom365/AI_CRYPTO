@@ -3,7 +3,6 @@ import subprocess
 import sys
 import git
 from dotenv import load_dotenv
-import logging
 
 # 환경 변수 로드
 load_dotenv()
@@ -27,25 +26,26 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
         # 인증 정보가 제공된 경우 URL에 포함
         if username and password:
             repo_url = repo_url.replace("//", f"//{username}:{password}@")
-            logging.debug("인증 정보를 사용하여 URL을 설정했습니다.")
+            # print("인증 정보를 사용하여 URL을 설정했습니다.")
 
         # 로컬 경로에 리포지토리가 없는 경우 클론
         if not os.path.exists(os.path.join(repo_path, ".git")):
-            logging.info(f"리포지토리가 존재하지 않습니다. {repo_url}에서 클론을 생성합니다.")
+            print(f"리포지토리가 존재하지 않습니다. {repo_url}에서 클론을 생성합니다.")
             git.Repo.clone_from(repo_url, repo_path)
             return True
 
         # 기존 리포지토리 업데이트
         repo = git.Repo(repo_path)
         if has_updates(repo):  # 업데이트 여부 확인
-            logging.info("업데이트가 발견되었습니다. 로컬 브랜치를 원격 브랜치로 재설정합니다.")
+            print("업데이트가 발견되었습니다. 로컬 브랜치를 원격 브랜치로 재설정합니다.")
             repo.git.reset('--hard', 'origin/master')
-            logging.info("업데이트 완료.")
+            print("업데이트 완료.")
             return True
         else:
-            logging.debug("업데이트가 필요하지 않습니다.")
+            # print("업데이트가 필요하지 않습니다.")
+            pass
     except Exception as e:
-        logging.error(f"리포지토리 업데이트 중 오류 발생: {e}")
+        print(f"리포지토리 업데이트 중 오류 발생: {e}")
 
 
 def do_update():
