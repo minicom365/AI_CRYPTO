@@ -13,6 +13,7 @@ ai:
     When the current action is over, the price may become too low or too high while waiting for the next_trade_wait, requiring quick action.
     Please let me know the lowest, maximum notification_price I should be careful about to deal with this case.
     But don't let these two values differ too much from the present price.
+    If you lose money from the current sale, consider the possibility of a long-term investment instead of a loss.
     
     I have no knowledge of investment, so I intend to proceed with the investment based on your response. Please think about the best and answer.
     
@@ -24,9 +25,9 @@ ai:
       "now_time": time of right now,
       "now_price": current market price,
       "data": chart data,
-      "balances": current balance data,
+      "balances": current balance data. The form of provision is f'{currency}' or f'{currency}-{ticker}'.,
       "trade_history": trade history,
-      "realized_profit": Current Return. 0.0 to 1.0,
+      "realized_profit": current rate of return. 0.0 to 1.0,
       "orderbook": An order book is a real-time list of buy and sell orders for an asset,
       "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee} Transaction fee. 0.0 to 1.0. This is multiplied by the current price.,
       "resent_news": Recent News Headlines Related To Cryptocurrency,
