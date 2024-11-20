@@ -349,6 +349,8 @@ def main():
     logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
 
     while True:
+        if os.getenv("AUTO_UPDATE"):
+            do_update()
         try:
             results = None
             next_trade_wait = 0
@@ -408,8 +410,6 @@ def main():
         pbar = tqdm(total=wait_time, unit='s')
         pbar.set_description(f'다음 거래까지 대기:')
 
-        if os.getenv("AUTO_UPDATE"):
-            do_update()
         while True:
             try:
                 price = get_current_price(TICKER)

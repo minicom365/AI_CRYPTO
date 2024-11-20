@@ -3,6 +3,7 @@ import subprocess
 import sys
 import git
 from dotenv import load_dotenv
+import logging
 
 # 환경 변수 로드
 load_dotenv()
@@ -20,29 +21,38 @@ def has_updates(repo):
     return local_commit != remote_commit  # 커밋이 다르면 업데이트가 존재함
 
 
-def update_repo(repo_url: str, repo_path: str, username: str, password: str):
+def update_repo(repo_url: str, repo_path: str, username: str = None, password: str = None):
+    """원격 리포지토리를 업데이트하거나 클론하는 함수."""
     try:
-        # 비공식 리포지토리의 URL을 설정합니다.
-        repo_url = repo_url.replace("//", f'//{username}:{password}@')
+        # 인증 정보가 제공된 경우 URL에 포함
+        if username and password:
+            repo_url = repo_url.replace("//", f"//{username}:{password}@")
+            logging.debug("인증 정보를 사용하여 URL을 설정했습니다.")
 
+        # 로컬 경로에 리포지토리가 없는 경우 클론
+        if not os.path.exists(os.path.join(repo_path, ".git")):
+            logging.info(f"리포지토리가 존재하지 않습니다. {repo_url}에서 클론을 생성합니다.")
+            git.Repo.clone_from(repo_url, repo_path)
+            return True
+
+        # 기존 리포지토리 업데이트
         repo = git.Repo(repo_path)
         if has_updates(repo):  # 업데이트 여부 확인
-            origin = repo.remotes.origin
-            origin.pull()
-            print("업데이트 완료.")
+            logging.info("업데이트가 발견되었습니다. 로컬 브랜치를 원격 브랜치로 재설정합니다.")
+            repo.git.reset('--hard', 'origin/master')
+            logging.info("업데이트 완료.")
             return True
         else:
-            print("업데이트가 필요하지 않습니다.")
-
+            logging.debug("업데이트가 필요하지 않습니다.")
     except Exception as e:
-        print(f"오류 발생: {e}")
+        logging.error(f"리포지토리 업데이트 중 오류 발생: {e}")
 
 
 def do_update():
     root_dir = os.path.dirname(os.path.abspath(__file__))
     repo_url = os.getenv("GIT_REPO_URL")
-    username = os.getenv("GIT_USERNAME")
-    password = os.getenv("GIT_PASSWORD")
+    username = os.getenv("GIT_USERNAME", None)  # 환경 변수에서 가져오거나 None
+    password = os.getenv("GIT_PASSWORD", None)  # 환경 변수에서 가져오거나 None
 
     if update_repo(repo_url, root_dir, username, password):
         try:
