@@ -76,7 +76,7 @@ def calculate_realized_profit(ticker=None):
         ticker (str, optional): 특정 암호화폐의 티커. 지정되지 않으면 모든 암호화폐에 대해 계산.
 
     Returns:
-        float: 실현 손익.
+        float: 실현 손익 퍼센티지
     """
     total_profit = 0.0
 
@@ -101,11 +101,10 @@ def calculate_realized_profit(ticker=None):
         # 실현 손익 계산
         if quantity > 0 and avg_buy_price > 0:
             # 현재 가격 대비 평균 매수가의 등락률 계산
-            price_change_percentage = ((current_price - avg_buy_price) / avg_buy_price) * 100
+            price_change_percentage = ((current_price - avg_buy_price) / avg_buy_price)
 
             # 등락률에 기반한 실현 손익
-            realized_profit = price_change_percentage * quantity  # 등락률을 곱하여 손익을 계산
-            total_profit += realized_profit
+            total_profit += price_change_percentage
 
     return total_profit
 
