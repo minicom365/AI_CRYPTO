@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 from datetime import datetime, timedelta
@@ -442,6 +443,15 @@ def main():
 
 if __name__ == "__main__":
     try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--ticker", type=str, help="Set the ticker symbol")
+        args = parser.parse_args()
+
+        if args.ticker:
+            if "-" not in args.ticker:
+                TICKER = f"{UNIT_CURRENCY}-{args.ticker}"
+            TICKER = args.ticker
+
         main()
     except KeyboardInterrupt:
         print("프로그램이 종료되었습니다.")
