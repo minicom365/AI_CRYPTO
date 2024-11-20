@@ -48,7 +48,7 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
         print(f"리포지토리 업데이트 중 오류 발생: {e}")
 
 
-def do_update():
+def do_update(args: list = sys.argv):
     root_dir = os.path.dirname(os.path.abspath(__file__))
     repo_url = os.getenv("GIT_REPO_URL")
     username = os.getenv("GIT_USERNAME", None)  # 환경 변수에서 가져오거나 None
@@ -64,7 +64,7 @@ def do_update():
             print("필요한 패키지가 성공적으로 설치되었습니다.")
 
             # 새 스크립트를 비동기적으로 실행
-            subprocess.Popen([venv_python, os.path.join(root_dir, 'main.py')])
+            subprocess.Popen([venv_python, os.path.join(root_dir, 'main.py'), *args])
             print("새 코드가 성공적으로 실행되었습니다.")
             sys.exit()  # 현재 스크립트 종료
 

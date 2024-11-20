@@ -92,7 +92,7 @@ def calculate_realized_profit(ticker=None):
 
         avg_buy_price = float(balance_info['avg_buy_price'])  # 평균 매입 단가
         quantity = float(balance_info['balance'] + balance_info['locked'])  # 잔고
-        print(n_ticker, avg_buy_price, quantity)
+        # print(n_ticker, avg_buy_price, quantity)
         try:
             current_price = get_current_price(n_ticker)  # 현재가
         except:
@@ -448,9 +448,9 @@ if __name__ == "__main__":
         args = parser.parse_args()
 
         if args.ticker:
-            if "-" not in args.ticker:
-                TICKER = f"{UNIT_CURRENCY}-{args.ticker}"
-            TICKER = args.ticker
+            if not "-" in args.ticker:
+                args.ticker = f"{UNIT_CURRENCY}-{args.ticker}"
+            TICKER = args.ticker.upper()
 
         main()
     except KeyboardInterrupt:
