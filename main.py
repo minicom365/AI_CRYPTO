@@ -280,9 +280,10 @@ def place_order(ticker: str, order_type: str, amount: float, price: float = None
         if not chance_info:
             raise ValueError("주문 가능 정보 조회에 실패했습니다.")
 
-        min_order_amount = float(chance_info['market'][trade_trans[order_type]]['min_total'])
-        if amount < min_order_amount:
-            raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
+        # 판매시 오류 발생 wip
+        # min_order_amount = float(chance_info['market'][trade_trans[order_type]]['min_total'])
+        # if amount < min_order_amount:
+        #     raise ValueError(f"{order_type} 주문 금액 {amount}가 최소 금액 {min_order_amount}보다 작습니다.")
 
         # 주문 실행
         if order_type == "buy":
