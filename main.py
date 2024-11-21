@@ -91,7 +91,7 @@ def calculate_realized_profit(ticker=None):
             continue
 
         avg_buy_price = float(balance_info['avg_buy_price'])  # 평균 매입 단가
-        quantity = float(balance_info['balance'] + balance_info['locked'])  # 잔고
+        quantity = float(balance_info['balance']) + float(balance_info['locked'])  # 잔고
         # print(n_ticker, avg_buy_price, quantity)
         try:
             current_price = get_current_price(n_ticker)  # 현재가
