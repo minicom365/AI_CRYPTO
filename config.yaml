@@ -14,6 +14,7 @@ ai:
     Please let me know the lowest, maximum notification_price I should be careful about to deal with this case.
     But don't let these two values differ too much from the present price.
     If you lose money from the current sale, consider the possibility of a long-term investment instead of a loss.
+    If "realized_profit" is negative, it's definitely a loss. Never sell it unless it's for loss defense
     
     I have no knowledge of investment, so I intend to proceed with the investment based on your response. Please think about the best and answer.
     
