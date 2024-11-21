@@ -118,7 +118,7 @@ def get_balances(ticker=None) -> dict:
     """보유 자산 및 잔고 조회"""
     if ticker:
         return {
-            "KRW": upbit.get_balance("KRW"),
+            UNIT_CURRENCY: upbit.get_balance(UNIT_CURRENCY),
             ticker: upbit.get_balance(ticker)
         }
     else:
@@ -243,19 +243,19 @@ def execute_trade(ticker, decision, target_price, percent, balances):
         logger.info("### 테스트 모드 - 실제 거래는 실행되지 않습니다 ###")
         return
 
-    krw_balance = balances.get("KRW", 0)
+    unit_balance = balances.get(UNIT_CURRENCY, 0)
     asset_balance = balances.get(ticker, 0)
     trade_amount = 0
 
     if decision == "buy":
-        if krw_balance <= 5000:
+        if unit_balance <= 5000:
             logger.warning("### 거래 실패 - 충분한 자금이 없습니다 ###")
             return
-        trade_amount = min(krw_balance * percent * 0.9995, krw_balance)
+        trade_amount = min(unit_balance * percent * 0.9995, unit_balance)
 
     elif decision == "sell":
-        est_krw_value = asset_balance * percent * get_current_price(ticker)
-        if est_krw_value <= 5000:
+        est_unit_value = asset_balance * percent * get_current_price(ticker)
+        if est_unit_value <= 5000:
             logger.warning("### 거래 실패 - 충분한 자산이 없습니다 ###")
             return
         trade_amount = asset_balance * percent
