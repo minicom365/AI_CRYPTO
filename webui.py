@@ -4,7 +4,7 @@ import pandas as pd
 import random
 import time
 
-from main import ai_Query, ai_make_message
+from main import ai_Query, ai_make_dataset
 
 
 def init(ticker, trade_history, realized_profit, chart_data, ai_instruct):
@@ -30,7 +30,7 @@ def init(ticker, trade_history, realized_profit, chart_data, ai_instruct):
 
     st.header("AI 매매 결정")
     if st.button("AI 매매 결정을 요청"):
-        message = ai_make_message(ticker, balances)
+        message = ai_make_dataset(ticker, balances)
         decision = ai_Query(ai_instruct, message)
         if decision:
             display_ai_decision(decision)

@@ -17,6 +17,7 @@ from auto_update import do_update
 from logger import LogManager
 from indicator import add_indicators
 from crawler import *
+import re
 
 # 환경 변수 로드
 load_dotenv()
@@ -140,15 +141,20 @@ def filter_json(json_string):
 
 def get_ai():
     base_url = config["ai"].get("base_url")
+    http_regex = "https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
     if base_url == 'openrouter':
         ai = openai
         ai.api_key = os.getenv("OPENROUTER_API_KEY")
         ai.base_url = "https://openrouter.ai/api/v1/"
+    elif not re.match(http_regex, base_url):
+        ai = openai
+        ai.api_key = os.getenv(f"{base_url.upper()}_API_KEY")
+        ai.base_url = f"https://{base_url}.ai/api/v1/"
     else:
         ai = openai
         ai.api_key = os.getenv("OPENAI_API_KEY")
         ai.base_url = base_url
-
+    ai.max_retries = 5
     return ai
 
 
@@ -174,7 +180,7 @@ def get_chance(ticker):
     return upbit.get_chance(ticker)
 
 
-def ai_make_message(ticker: str, balances: dict):
+def ai_make_dataset(ticker: str, balances: dict):
     daily_data = fetch_data(ticker)
     shortly_data = fetch_data(ticker, interval=config["shortly_data_interval"], count=config['shortly_data_count'])
     daily_data, shortly_data = list(map(add_indicators, [daily_data, shortly_data]))
@@ -367,7 +373,7 @@ def main():
             logger.info(f"### 현시점 수익률: {calculate_realized_profit(TICKER) * 100}% ###")
 
             logger.info("### 데이터 수집 시작 ###")
-            message = ai_make_message(TICKER, balances)
+            message = ai_make_dataset(TICKER, balances)
             logger.info("### 데이터 수집 완료 ###")
 
             logger.info("### AI 쿼리 시도 ###")
