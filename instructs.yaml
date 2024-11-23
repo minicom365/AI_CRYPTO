@@ -24,10 +24,11 @@ instruct: |-
     "balances": current balance data. The form of provision is f'{currency}' or f'{currency}-{ticker}'.,
     "trade_history": trade history,
     "realized_profit": current rate of return. -1.0 to 1.0. It refers to the profit or loss rate that occurs when all of the current holdings are sold,
-    "orderbook": An order book is a real-time list of buy and sell orders for an asset,
-    "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee} Transaction fee. 0.0 to 1.0. This is multiplied by the current price.,
     "resent_news": Recent News Headlines Related To Cryptocurrency,
-    "FGI": Fear and Greed Index.
+    "FGI": Fear and Greed Index,
+    "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee} Transaction fee. 0.0 to 1.0. This is multiplied by the current price.,
+    "orderbook": An order book is a real-time list of buy and sell orders for an asset,
+    "min_trade_percent": {"sell", "buy"} If you want to make a deal, you'll need to order at least the next percent. If it's None, you can't buy it.
   }
   
   Responses Format:

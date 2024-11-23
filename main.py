@@ -118,12 +118,16 @@ def fetch_data(ticker, interval="day", count=30):
     return pyupbit.get_ohlcv(ticker, count=count, interval=interval)
 
 
+def get_balance(ticker):
+    return upbit.get_balance(ticker)
+
+
 def get_balances(ticker=None) -> dict:
     """보유 자산 및 잔고 조회"""
     if ticker:
         return {
-            UNIT_CURRENCY: upbit.get_balance(UNIT_CURRENCY),
-            ticker: upbit.get_balance(ticker)
+            UNIT_CURRENCY: get_balance(UNIT_CURRENCY),
+            ticker: get_balance(ticker)
         }
     else:
         return upbit.get_balances()
@@ -181,6 +185,7 @@ def get_chance(ticker):
 
 
 def ai_make_dataset(ticker: str, balances: dict):
+    now_price = get_current_price(ticker)
     daily_data = fetch_data(ticker)
     shortly_data = fetch_data(ticker, interval=config["shortly_data_interval"], count=config['shortly_data_count'])
     daily_data, shortly_data = list(map(add_indicators, [daily_data, shortly_data]))
@@ -188,11 +193,15 @@ def ai_make_dataset(ticker: str, balances: dict):
         "daily_data": daily_data.to_json(),
         f"shortly_data({config['shortly_data_interval']})": shortly_data.to_json()
     }
-    bid_fee, ask_fee = [get_chance(ticker)[x] for x in ['bid_fee', 'ask_fee']]
+    bid_fee, ask_fee = [get_chance(ticker)[x + "_fee"] for x in ['bid', 'ask']]
+
+    bid_min_total, ask_min_total = [get_chance(ticker)['market'][x]['min_total'] for x in ['bid', 'ask']]
+    min_sell_percent = ask_min_total / ((balances[ticker]) * now_price) * 100
+    min_buy_percent = bid_min_total / ((balances[UNIT_CURRENCY])) * 100
     return json.dumps({
         "ticker": ticker,
         "now_time": str(datetime.now().astimezone()),
-        "now_price": get_current_price(ticker),
+        "now_price": now_price,
         "data": data_combined,
         "balances": balances,
         "trade_history": trade_history,
@@ -200,9 +209,11 @@ def ai_make_dataset(ticker: str, balances: dict):
         #  "resent_reflection": reflection on recent transactions,
         "realized_profit": calculate_realized_profit(ticker),
         "orderbook": get_orderboot(ticker),
+        "min_trade_percent": {"sell": min_sell_percent, "buy": min_buy_percent},
         "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee},
         "resent_news": get_recent_news(20, api_key=os.getenv("CRYPTOPANIC_API_KEYS")),
-        "FGI": get_fear_greed_index(5)})
+        "FGI": get_fear_greed_index(5)
+    })
 
 
 def ai_Query(messages: str) -> dict:
