@@ -196,8 +196,8 @@ def ai_make_dataset(ticker: str, balances: dict):
     bid_fee, ask_fee = [get_chance(ticker)[x + "_fee"] for x in ['bid', 'ask']]
 
     bid_min_total, ask_min_total = [float(get_chance(ticker)['market'][x]['min_total']) for x in ['bid', 'ask']]
-    min_sell_percent = ask_min_total / (balances[ticker] * now_price) * 100
-    min_buy_percent = bid_min_total / (balances[UNIT_CURRENCY]) * 100
+    min_sell_percent = ask_min_total / (balances[ticker] * now_price) * 100 if balances[ticker] else None
+    min_buy_percent = bid_min_total / (balances[UNIT_CURRENCY]) * 100 if balances[UNIT_CURRENCY] else None
     return json.dumps({
         "ticker": ticker,
         "now_time": str(datetime.now().astimezone()),
