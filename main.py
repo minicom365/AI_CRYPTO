@@ -25,6 +25,9 @@ load_dotenv()
 with open("config.yaml", "r", encoding='utf-8') as file:
     config = yaml.safe_load(file)
 
+with open("instructs.yaml", "r", encoding='utf-8') as file:
+    instructs = yaml.safe_load(file)
+
 # 상수 정의
 TEST_FLAG = False  # 테스트 모드 플래그
 UPBIT_ACCESS_KEY = os.getenv("UPBIT_ACCESS_KEY")
@@ -368,7 +371,7 @@ def main():
             logger.info("### 데이터 수집 완료 ###")
 
             logger.info("### AI 쿼리 시도 ###")
-            ai_answer = ai_Query(config["ai"]["instruct"], message)
+            ai_answer = ai_Query(instructs["instruct"], message)
             if ai_answer:
                 price = get_current_price(TICKER)
                 decision = ai_answer.get("decision")

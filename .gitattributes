@@ -1,0 +1,2 @@
+config.yaml merge=ours
+.env merge=ours
