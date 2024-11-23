@@ -36,7 +36,7 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
 
         # 기존 리포지토리 업데이트
         repo = git.Repo(repo_path)
-        if has_updates(repo):  # 업데이트 여부 확인
+        if has_updates(repo) or last_local_commit != repo.head.commit:  # 업데이트 여부 확인
             print("업데이트가 발견되었습니다.")
             repo.git.reset('--hard', 'origin/master')
             # repo.remotes.origin.pull()
@@ -45,6 +45,8 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
         else:
             # print("업데이트가 필요하지 않습니다.")
             pass
+        global last_local_commit
+        last_local_commit = repo.head.commit
     except Exception as e:
         print(f"리포지토리 업데이트 중 오류 발생: {e}")
 
