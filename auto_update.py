@@ -50,7 +50,7 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
 
 def do_update(args: list = sys.argv):
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_url = os.getenv("GIT_REPO_URL")
+    repo_url = os.getenv("GIT_REPO_URL") or git.Repo(root_dir).remotes[0].url
     username = os.getenv("GIT_USERNAME", None)  # 환경 변수에서 가져오거나 None
     password = os.getenv("GIT_PASSWORD", None)  # 환경 변수에서 가져오거나 None
 
