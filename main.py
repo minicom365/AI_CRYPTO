@@ -1,4 +1,5 @@
 import argparse
+from math import ceil
 import os
 import time
 from datetime import datetime, timedelta
@@ -196,8 +197,12 @@ def ai_make_dataset(ticker: str, balances: dict):
     bid_fee, ask_fee = [get_chance(ticker)[x + "_fee"] for x in ['bid', 'ask']]
 
     bid_min_total, ask_min_total = [float(get_chance(ticker)['market'][x]['min_total']) for x in ['bid', 'ask']]
-    min_sell_percent = ask_min_total / (balances[ticker] * now_price) * 100 if balances[ticker] else None
-    min_buy_percent = bid_min_total / (balances[UNIT_CURRENCY]) * 100 if balances[UNIT_CURRENCY] else None
+    min_sell_percent = ceil(ask_min_total / (balances[ticker] * now_price)) if balances[ticker] else None
+    min_sell_percent = None if min_sell_percent and min_sell_percent > 1 else min_sell_percent
+
+    min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY]) if balances[UNIT_CURRENCY] else None
+    min_buy_percent = None if min_buy_percent and min_buy_percent > 1 else min_buy_percent
+
     return json.dumps({
         "ticker": ticker,
         "now_time": str(datetime.now().astimezone()),
@@ -365,6 +370,7 @@ def mainLoop(re_request_message=None):
     if os.getenv("AUTO_UPDATE"):
         do_update()
     try:
+        global first_run
         logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
         results = None
         next_trade_wait = 0
@@ -469,7 +475,7 @@ def mainLoop(re_request_message=None):
             re_request_reason = re_request_reason.replace(old, new)
         re_request_message = ''.join(
             [request_message, instructs['spliter'],
-             ai_answer, instructs['spliter'], re_request_reason])
+             str(ai_answer), instructs['spliter'], re_request_reason])
 
     pbar.close()  # Progress bar 닫기
     mainLoop(re_request_message) if re_request_message else None
@@ -488,7 +494,6 @@ if __name__ == "__main__":
 
         logger.debug("디버깅으로 기록")
         first_run = True
-        re_request_message = None
         while True:
             mainLoop()
     except KeyboardInterrupt:
