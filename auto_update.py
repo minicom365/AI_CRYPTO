@@ -58,14 +58,14 @@ def do_update(args: list = sys.argv):
         try:
             # requirements.txt 파일 설치
             requirements_path = os.path.join(root_dir, 'requirements.txt')
-            venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe')
+            python = sys.executable
 
-            subprocess.check_call([venv_python, "-m", "pip", "install", "-r", requirements_path])
+            subprocess.check_call([python, "-m", "pip", "install", "-r", requirements_path])
             print("필요한 패키지가 성공적으로 설치되었습니다.")
 
             # 새 스크립트를 비동기적으로 실행
-            print([venv_python, os.path.join(root_dir, args[0]), *args[1:]])
-            subprocess.Popen([venv_python, os.path.join(root_dir, args[0]), *args[1:]])
+            print([python, os.path.join(root_dir, args[0]), *args[1:]])
+            subprocess.Popen([python, os.path.join(root_dir, args[0]), *args[1:]])
             print("새 코드가 성공적으로 실행되었습니다.")
             sys.exit()  # 현재 스크립트 종료
 
