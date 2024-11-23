@@ -44,6 +44,25 @@ instruct: |-
   }
   ```
 
+spliter: |-
+  
+  --------------------
+  
+
+re-request: |-
+  
+  
+  <-- The content so far was the previous request and your response.
+  I request a response again for the following reasons. -->
+  
+  
+
+has_less_money: |-
+  You do not have enough money to purchase. You must purchase at least {min_price} ({unit}) = {min_price_ticker} ({ticker}).
+
+alert_level_reached: |-
+  Prices have suddenly {fluctuation} to the warning level you told us. ({price} -> {current_price})
+
 reflection: |-    
   You are an expert in short-term Bitcoin trading. Please analyze this data and provide:
   
