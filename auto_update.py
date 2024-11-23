@@ -37,8 +37,9 @@ def update_repo(repo_url: str, repo_path: str, username: str = None, password: s
         # 기존 리포지토리 업데이트
         repo = git.Repo(repo_path)
         if has_updates(repo):  # 업데이트 여부 확인
-            print("업데이트가 발견되었습니다. 로컬 브랜치를 원격 브랜치로 재설정합니다.")
+            print("업데이트가 발견되었습니다.")
             repo.git.reset('--hard', 'origin/master')
+            # repo.remotes.origin.pull()
             print("업데이트 완료.")
             return True
         else:

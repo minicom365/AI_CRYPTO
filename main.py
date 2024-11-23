@@ -141,7 +141,7 @@ def filter_json(json_string):
 
 def get_ai():
     base_url = config["ai"].get("base_url")
-    http_regex = "https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
+    http_regex = r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
     if base_url == 'openrouter':
         ai = openai
         ai.api_key = os.getenv("OPENROUTER_API_KEY")
@@ -350,7 +350,7 @@ def translate(message: str):
     return result if not 'MYMEMORY WARNING:' in result else message
 
 
-def mainLoop():
+def mainLoop(re_request_message=None):
     if os.getenv("AUTO_UPDATE"):
         do_update()
     try:
@@ -419,14 +419,14 @@ def mainLoop():
     exit_code = None
     while True:
         try:
-            price = get_current_price(TICKER)
+            current_price = get_current_price(TICKER)
 
             # AI 응답에 따른 가격 경고
             if ai_answer:
                 alert_price_high = ai_answer.get("alert_price_high")
                 alert_price_low = ai_answer.get("alert_price_low")
 
-                if alert_price_low > price or price > alert_price_high:
+                if alert_price_low > current_price or current_price > alert_price_high:
                     exit_code = "alert_level_reached"
                     break
 
@@ -442,16 +442,16 @@ def mainLoop():
             pass
 
     if exit_code == "alert_level_reached":
-        if price > alert_price_high:
-            logger.warning(f'### 가격 급상승 감지 --  ### {price} > {alert_price_high}')
+        if current_price > alert_price_high:
+            logger.warning(f'### 가격 급상승 감지 --  ### {current_price} > {alert_price_high}')
             fluctuation = "increased"
-        elif price < alert_price_low:
-            logger.warning(f'### 가격 급하락 감지 --  ### {price} < {alert_price_low}')
+        elif current_price < alert_price_low:
+            logger.warning(f'### 가격 급하락 감지 --  ### {current_price} < {alert_price_low}')
             fluctuation = "decreased"
         replace_dict = {
             "{fluctuation}": fluctuation,
-            "{price}": results.get('price', "?"),
-            "{current_price}": price
+            "{price}": price,
+            "{current_price}": current_price
         }
         re_request_reason = instructs['re-request'] + instructs["alert_level_reached"]
         for old, new in replace_dict.items():
@@ -461,6 +461,7 @@ def mainLoop():
              ai_answer, instructs['spliter'], re_request_reason])
 
     pbar.close()  # Progress bar 닫기
+    mainLoop(re_request_message) if re_request_message else None
 
 
 if __name__ == "__main__":
