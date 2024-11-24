@@ -100,6 +100,8 @@ def calculate_realized_profit(ticker=None):
         # print(n_ticker, avg_buy_price, quantity)
         try:
             current_price = get_current_price(n_ticker)  # 현재가
+        except KeyboardInterrupt:
+            raise
         except:
             current_price = 0
 
@@ -177,6 +179,8 @@ def translate(text):
 
         # 번역 결과 출력
         return response.json()['translatedText']
+    except KeyboardInterrupt:
+        raise
     except:
         return text
 
@@ -255,6 +259,8 @@ def ai_Query(messages: str) -> dict:
         return None
     except openai.RateLimitError as e:
         chkerr(e.response)
+    except KeyboardInterrupt:
+        raise
     except Exception as e:
         logger.error(f"AI 매매 결정 중 오류 발생: {e}")
         return None
@@ -319,6 +325,8 @@ def place_order(ticker: str, order_type: str, amount: float, price: float = None
 
         return response
 
+    except KeyboardInterrupt:
+        raise
     except Exception as e:
         logger.error(f"주문 처리 중 오류 발생: {e}")
         Console().print_exception(show_locals=True)
@@ -424,7 +432,8 @@ def mainLoop(re_request_message=None):
                     next_trade_wait = None
         else:
             logger.error("### 결정 실패 - AI 응답 없음 ###")
-
+    except KeyboardInterrupt:
+        raise
     except Exception as E:
         Console().print_exception(show_locals=True)
 
