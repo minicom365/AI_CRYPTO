@@ -121,11 +121,11 @@ def fetch_data(ticker, interval="day", count=30):
     return pyupbit.get_ohlcv(ticker, count=count, interval=interval)
 
 
-def get_balance(ticker):
-    return upbit.get_balance(ticker)
+def get_balance(ticker: str, verbose=None) -> float | int:
+    return upbit.get_balance(ticker, verbose)
 
 
-def get_balances(ticker=None) -> dict:
+def get_balances(ticker: str = None) -> dict:
     """보유 자산 및 잔고 조회"""
     if ticker:
         return {
@@ -136,7 +136,7 @@ def get_balances(ticker=None) -> dict:
         return upbit.get_balances()
 
 
-def get_orderboot(ticker):
+def get_orderboot(ticker: str):
     pyupbit.get_orderbook(ticker)
 
 
@@ -165,7 +165,7 @@ def get_ai():
     return ai
 
 
-def translate(text):
+def translate(text: str) -> str:
     try:
         params = {
             'q': text,
@@ -185,11 +185,11 @@ def translate(text):
         return text
 
 
-def get_chance(ticker):
+def get_chance(ticker: str):
     return upbit.get_chance(ticker)
 
 
-def ai_make_dataset(ticker: str, balances: dict):
+def ai_make_dataset(ticker: str, balances: dict) -> str:
     now_price = get_current_price(ticker)
     daily_data = fetch_data(ticker)
     shortly_data = fetch_data(ticker, interval=config["shortly_data_interval"], count=config['shortly_data_count'])
@@ -266,7 +266,7 @@ def ai_Query(messages: str) -> dict:
         return None
 
 
-def execute_trade(ticker, decision, target_price, percent, balances):
+def execute_trade(ticker: str, decision, target_price, percent, balances):
     """AI의 매매 결정과 퍼센트를 기반으로 거래를 실행합니다."""
     if TEST_FLAG:
         logger.info("### 테스트 모드 - 실제 거래는 실행되지 않습니다 ###")
@@ -361,15 +361,15 @@ def get_last_buy_trade():
     return next((trade for trade in reversed(trade_history) if trade['type'] == 'buy'), None)
 
 
-def get_current_price(ticker):
+def get_current_price(ticker: str) -> float:
     """현재 가격을 조회합니다."""
     return pyupbit.get_current_price(ticker)
 
 
-def get_fluctuation_rate(now, to): return (to - now) / now * 100
+def get_fluctuation_rate(now: float | int, to: float | int) -> float: return (to - now) / now * 100
 
 
-def translate(message: str):
+def translate(message: str) -> str:
     result = Translator(to_lang="ko").translate(message)
     return result if not 'MYMEMORY WARNING:' in result else message
 
@@ -400,14 +400,14 @@ def mainLoop(re_request_message=None):
         if ai_answer:
             re_request_message = None
 
-            price = get_current_price(TICKER)
+            price: float = get_current_price(TICKER)
             decision = ai_answer.get("decision")
-            target_price = ai_answer.get("target_price", None) or price
+            target_price = float(ai_answer.get("target_price", None) or price)
             reason = translate(ai_answer.get("reason"))
-            percent = ai_answer.get("percent", 1.0)
-            next_trade_wait = ai_answer.get("next_trade_wait", 0)
+            percent = float(ai_answer.get("percent", 1.0))
+            next_trade_wait = float(ai_answer.get("next_trade_wait", 0))
             next_trade_time = (datetime.now() + timedelta(minutes=next_trade_wait)).strftime("%H:%M:%S")
-            alert_price = {f: ai_answer.get(f"alert_price_{f}") for f in ["low", "high"]}
+            alert_price = {f: float(ai_answer.get(f"alert_price_{f}")) for f in ["low", "high"]}
             alert_price_rate = {f: get_fluctuation_rate(price, alert_price[f]) for f in ["low", "high"]}
 
             logger.info(f"### AI 결정: {decision.upper()} ###", )
