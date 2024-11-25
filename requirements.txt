@@ -5,7 +5,7 @@ pyyaml
 ta
 bs4
 gitpython
-translate
+argostranslate
 rich
 streamlit
 plotly

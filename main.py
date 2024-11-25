@@ -1,4 +1,5 @@
 import argparse
+import locale
 from math import ceil
 import os
 import time
@@ -10,7 +11,8 @@ import yaml
 from dotenv import load_dotenv
 import pyupbit
 import openai
-from translate import Translator
+import argostranslate.package
+import argostranslate.translate
 import logging
 from rich.logging import RichHandler
 from rich.console import Console
@@ -20,7 +22,7 @@ from logger import LogManager
 from indicator import add_indicators
 from crawler import *
 import re
-
+import locale
 # 환경 변수 로드
 load_dotenv()
 
@@ -38,6 +40,10 @@ UPBIT_SECRET_KEY = os.getenv("UPBIT_SECRET_KEY")
 CURRENCY = "BTC"  # 거래할 티커
 UNIT_CURRENCY = "KRW"
 TICKER = UNIT_CURRENCY + "-" + CURRENCY
+
+
+locale.setlocale(locale.LC_ALL, "")
+LANG = locale.getlocale(locale.LC_ALL)[0][:2].lower()
 
 # 로그 설정
 install(show_locals=True)
@@ -390,9 +396,8 @@ def get_current_price(ticker: str) -> float:
 def get_fluctuation_rate(now: float | int, to: float | int) -> float: return (to - now) / now * 100
 
 
-def translate(message: str) -> str:
-    result = Translator(to_lang="ko").translate(message)
-    return result if not 'MYMEMORY WARNING:' in result else message
+def translate(message: str, from_code: str = "en", to_code: str = LANG) -> str:
+    return argostranslate.translate.translate(message, from_code, to_code)
 
 
 def mainLoop(re_request_message=None):
@@ -523,6 +528,12 @@ if __name__ == "__main__":
             if not "-" in args.ticker:
                 args.ticker = f"{UNIT_CURRENCY}-{args.ticker}"
             TICKER = args.ticker.upper()
+
+        # Download and install Argos Translate package
+        argostranslate.package.update_package_index()
+        available_packages = argostranslate.package.get_available_packages()
+        package_to_install = next(filter(lambda x: x.from_code == "en" and x.to_code == LANG, available_packages))
+        argostranslate.package.install_from_path(package_to_install.download())
 
         logger.debug("디버깅으로 기록")
         first_run = True
