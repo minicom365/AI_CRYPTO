@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime, timedelta
 import json
+from urllib.parse import urlparse
 from tqdm import tqdm
 import yaml
 from dotenv import load_dotenv
@@ -145,20 +146,40 @@ def filter_json(json_string):
 
 
 def get_ai():
+    def extract_pure_domain(url):
+        parsed_url = urlparse(url)
+        hostname = parsed_url.hostname
+        if not hostname:
+            return None
+        parts = hostname.split('.')
+        if len(parts) > 2 and len(parts[-1]) == 2:
+            # TLD is the last two parts
+            domain = parts[-3]
+        elif len(parts) > 1:
+            # TLD is the last part
+            domain = parts[-2]
+        else:
+            # Single part hostname
+            domain = parts[0]
+        return domain
+
+    ai = openai
     base_url = config["ai"].get("base_url")
     http_regex = r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
     if base_url == None:
-        ai = openai
         ai.api_key = os.getenv("OPENAI_API_KEY")
         ai.base_url = base_url
-    elif base_url == 'openrouter':
-        ai = openai
-        ai.api_key = os.getenv("OPENROUTER_API_KEY")
-        ai.base_url = "https://openrouter.ai/api/v1/"
-    elif not re.match(http_regex, str(base_url)):
-        ai = openai
-        ai.api_key = os.getenv(f"{base_url.upper()}_API_KEY")
-        ai.base_url = f"https://{base_url}.ai/api/v1/"
+    else:
+        if re.match(http_regex, str(base_url)):
+            ai.base_url = base_url + "/" if base_url[-1] != "/" else ""
+            domain = extract_pure_domain(base_url)
+            ai.api_key = os.getenv(f"{domain}_API_KEY")
+        else:
+            ai.api_key = os.getenv(f"{base_url}_API_KEY")
+            if base_url == 'openrouter':
+                ai.base_url = "https://openrouter.ai/api/v1/"
+            elif base_url == 'deepseek':
+                ai.base_url = "https://api.deepseek.com/v1/"
     ai.max_retries = 5
     return ai
 
