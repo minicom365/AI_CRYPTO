@@ -100,10 +100,8 @@ def calculate_realized_profit(ticker=None):
         # print(n_ticker, avg_buy_price, quantity)
         try:
             current_price = get_current_price(n_ticker)  # 현재가
-        except KeyboardInterrupt:
-            raise
         except:
-            current_price = 0
+            raise
 
         # 실현 손익 계산
         if quantity > 0 and avg_buy_price > 0:
@@ -149,23 +147,25 @@ def filter_json(json_string):
 def get_ai():
     base_url = config["ai"].get("base_url")
     http_regex = r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
-    if base_url == 'openrouter':
-        ai = openai
-        ai.api_key = os.getenv("OPENROUTER_API_KEY")
-        ai.base_url = "https://openrouter.ai/api/v1/"
-    elif not re.match(http_regex, base_url):
-        ai = openai
-        ai.api_key = os.getenv(f"{base_url.upper()}_API_KEY")
-        ai.base_url = f"https://{base_url}.ai/api/v1/"
-    else:
+    if base_url == None:
         ai = openai
         ai.api_key = os.getenv("OPENAI_API_KEY")
         ai.base_url = base_url
+    elif base_url == 'openrouter':
+        ai = openai
+        ai.api_key = os.getenv("OPENROUTER_API_KEY")
+        ai.base_url = "https://openrouter.ai/api/v1/"
+    elif not re.match(http_regex, str(base_url)):
+        ai = openai
+        ai.api_key = os.getenv(f"{base_url.upper()}_API_KEY")
+        ai.base_url = f"https://{base_url}.ai/api/v1/"
     ai.max_retries = 5
     return ai
 
 
-def translate(text: str) -> str:
+def translate(text: str, run=3) -> str:
+    if run <= 0:
+        return text
     try:
         params = {
             'q': text,
@@ -182,7 +182,7 @@ def translate(text: str) -> str:
     except KeyboardInterrupt:
         raise
     except:
-        return text
+        return translate(text, run - 1)
 
 
 def get_chance(ticker: str):
@@ -401,7 +401,7 @@ def mainLoop(re_request_message=None):
             re_request_message = None
 
             price: float = get_current_price(TICKER)
-            decision = ai_answer.get("decision")
+            decision = ai_answer.get("decision").lower()
             target_price = float(ai_answer.get("target_price", None) or price)
             reason = translate(ai_answer.get("reason"))
             percent = float(ai_answer.get("percent", 1.0))
@@ -464,6 +464,8 @@ def mainLoop(re_request_message=None):
                 time.sleep(1)  # 1초 대기 후 다음 반복
             else:
                 break
+        except KeyboardInterrupt:
+            raise
         except:
             pass
 
