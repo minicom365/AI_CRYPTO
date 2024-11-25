@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timedelta
 import json
 from urllib.parse import urlparse
+import warnings
 from tqdm import tqdm
 import yaml
 from dotenv import load_dotenv
@@ -23,8 +24,11 @@ from indicator import add_indicators
 from crawler import *
 import re
 import locale
+
 # 환경 변수 로드
 load_dotenv()
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # 설정 파일 로드
 with open("config.yaml", "r", encoding='utf-8') as file:
@@ -41,9 +45,8 @@ CURRENCY = "BTC"  # 거래할 티커
 UNIT_CURRENCY = "KRW"
 TICKER = UNIT_CURRENCY + "-" + CURRENCY
 
-
-locale.setlocale(locale.LC_ALL, "")
-LANG = locale.getlocale(locale.LC_ALL)[0][:2].lower()
+LANG = [os.environ.get(code).split('_')[0] for code in ['LC_ALL', 'LC_CTYPE', 'LANG'] if os.environ.get(code)]
+LANG = locale.getlocale()[0][:2].lower() if not LANG else LANG[0]
 
 # 로그 설정
 install(show_locals=True)
