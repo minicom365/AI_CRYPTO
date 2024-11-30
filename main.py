@@ -242,7 +242,7 @@ def ai_make_dataset(ticker: str, balances: dict) -> str:
     min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY]) if balances[UNIT_CURRENCY] else None
     min_buy_percent = None if min_buy_percent and min_buy_percent > 1 else min_buy_percent
 
-    return json.dumps({
+    return {
         "ticker": ticker,
         "now_time": str(datetime.now().astimezone()),
         "now_price": now_price,
@@ -257,7 +257,7 @@ def ai_make_dataset(ticker: str, balances: dict) -> str:
         "fee": {"bid_fee": bid_fee, "ask_fee": ask_fee},
         "resent_news": get_recent_news(20, api_key=os.getenv("CRYPTOPANIC_API_KEYS")),
         "FGI": get_fear_greed_index(5)
-    })
+    }
 
 
 def ai_Query(messages: str) -> dict:
@@ -425,7 +425,7 @@ def mainLoop(re_request_message=None):
         logger.info("### 데이터 수집 완료 ###")
 
         logger.info("### AI 쿼리 시도 ###")
-        request_message = instructs["instruct"] + dataset
+        request_message = instructs["instruct"] + json.dumps(dataset)
         ai_answer = ai_Query(re_request_message or request_message)
         if ai_answer:
             re_request_message = None
@@ -445,6 +445,7 @@ def mainLoop(re_request_message=None):
             logger.info(f"### 목표 금액: {target_price} ###")
             logger.info(f"### 이유: {reason} ###")
             logger.info(f"### 거래 비율: {percent * 100}% ###")
+            logger.info(f"### 최소 거래 비율: {str(dataset["min_trade_percent"])} ###")
             logger.info(f"### 다음 거래 대기 시간: {next_trade_wait}분 ({next_trade_time}) ###")
             logger.info(f"### 대기 취소 금액(하한가): {alert_price['low']} ({alert_price_rate['low']:.2f}%) ###")
             logger.info(f"### 대기 취소 금액(상한가): {alert_price['high']} ({alert_price_rate['high']:.2f}%) ###")
@@ -458,8 +459,8 @@ def mainLoop(re_request_message=None):
                 results = execute_trade(TICKER, decision, target_price, percent, balances)
                 logger.debug(results)
                 log_trade(results, reason)
-                if not results:
-                    next_trade_wait = None
+                # if not results:
+                #     next_trade_wait = None
         else:
             logger.error("### 결정 실패 - AI 응답 없음 ###")
     except KeyboardInterrupt:
