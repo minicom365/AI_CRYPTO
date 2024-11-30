@@ -236,10 +236,10 @@ def ai_make_dataset(ticker: str, balances: dict) -> str:
     bid_fee, ask_fee = [get_chance(ticker)[x + "_fee"] for x in ['bid', 'ask']]
 
     bid_min_total, ask_min_total = [float(get_chance(ticker)['market'][x]['min_total']) for x in ['bid', 'ask']]
-    min_sell_percent = ceil(ask_min_total / (balances[ticker] * now_price)) if balances[ticker] else None
+    min_sell_percent = ceil(ask_min_total / (balances[ticker] * now_price) * 100) / 100 if balances[ticker] else None
     min_sell_percent = None if min_sell_percent and min_sell_percent > 1 else min_sell_percent
 
-    min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY]) if balances[UNIT_CURRENCY] else None
+    min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY] * 100) / 100 if balances[UNIT_CURRENCY] else None
     min_buy_percent = None if min_buy_percent and min_buy_percent > 1 else min_buy_percent
 
     return {
