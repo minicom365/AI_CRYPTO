@@ -45,8 +45,7 @@ CURRENCY = "BTC"  # 거래할 티커
 UNIT_CURRENCY = "KRW"
 TICKER = UNIT_CURRENCY + "-" + CURRENCY
 
-LANG = [os.environ.get(code).split('_')[0] for code in ['LC_ALL', 'LC_CTYPE', 'LANG'] if os.environ.get(code)]
-LANG = locale.getlocale()[0][:2].lower() if not LANG else LANG[0]
+LANG = locale.getlocale()[0].split("_")[0].lower()
 
 # 로그 설정
 install(show_locals=True)
@@ -193,7 +192,13 @@ def get_ai():
     return ai
 
 
-def translate(text: str, run=3) -> str:
+def translate(message: str, from_code: str = "en", to_code: str = None) -> str:
+    if not to_code:
+        to_code = LANG
+    return argostranslate.translate.translate(message, from_code, to_code)
+
+
+def translate_libre(text: str, run=3) -> str:
     if run <= 0:
         return text
     try:
@@ -399,10 +404,6 @@ def get_current_price(ticker: str) -> float:
 def get_fluctuation_rate(now: float | int, to: float | int) -> float: return (to - now) / now * 100
 
 
-def translate(message: str, from_code: str = "en", to_code: str = LANG) -> str:
-    return argostranslate.translate.translate(message, from_code, to_code)
-
-
 def mainLoop(re_request_message=None):
     if os.getenv("AUTO_UPDATE"):
         do_update()
@@ -535,7 +536,9 @@ if __name__ == "__main__":
         # Download and install Argos Translate package
         argostranslate.package.update_package_index()
         available_packages = argostranslate.package.get_available_packages()
-        package_to_install = next(filter(lambda x: x.from_code == "en" and x.to_code == LANG, available_packages))
+        package_to_install = next(
+            filter(lambda x: x.from_code == "en" and x.to_name.lower() == LANG.lower(), available_packages))
+        LANG = package_to_install.to_code
         argostranslate.package.install_from_path(package_to_install.download())
 
         logger.debug("디버깅으로 기록")
