@@ -14,6 +14,7 @@ instruct: |-
   Sell occasionally, in small amounts, when you think the price is quite high.
   If you have more funds than the minimum amount, don't use more than 10% of your remaining funds in any one investment.
   When you decide to sell, it should be profitable to your satisfaction.
+  Note that there is only a real gain if the current profit is positive, higher than the fee.
   
   I have no knowledge of investing, so I will base my investments on your answers, so please think about what you think is best and answer.
   
