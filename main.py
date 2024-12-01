@@ -391,9 +391,9 @@ def log_trade(order_response, reason=None):
         logger.warning(f"### 거래 실패: {order_response} ###")  # 로그 작성
 
 
-def get_last_buy_trade():
+def get_last_buy_trade() -> dict:
     """마지막 구매 거래를 조회합니다."""
-    return next((trade for trade in reversed(trade_history) if trade['type'] == 'buy'), None)
+    return next((trade for trade in reversed(trade_history) if trade['type'] == 'buy'), {})
 
 
 def get_current_price(ticker: str) -> float:
@@ -401,15 +401,29 @@ def get_current_price(ticker: str) -> float:
     return pyupbit.get_current_price(ticker)
 
 
+def get_order(ticker: str, state: str = None, **kwargs):
+    return upbit.get_order(ticker, state, **kwargs)
+
+
+def cancle_order(uuid):
+    return upbit.cancel_order(uuid)
+
+
 def get_fluctuation_rate(now: float | int, to: float | int) -> float: return (to - now) / now * 100
 
 
-def mainLoop(re_request_message=None):
+def mainLoop(re_request_message: str | None = None):
     if os.getenv("AUTO_UPDATE"):
         do_update()
     try:
         global first_run
         logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
+
+        for order in get_order(TICKER, get_last_buy_trade().get('uuid')):
+            if order['state'] == 'wait':
+                logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
+                cancle_order(order['uuid'])
+
         results = None
         next_trade_wait = 0
         balances = get_balances(TICKER)
@@ -425,7 +439,7 @@ def mainLoop(re_request_message=None):
         logger.info("### 데이터 수집 완료 ###")
 
         logger.info("### AI 쿼리 시도 ###")
-        request_message = instructs["instruct"] + json.dumps(dataset)
+        request_message: str = instructs["instruct"] + json.dumps(dataset)
         ai_answer = ai_Query(re_request_message or request_message)
         if ai_answer:
             re_request_message = None
