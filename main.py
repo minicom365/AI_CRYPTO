@@ -461,6 +461,10 @@ def mainLoop(re_request_message=None):
                         logger.warning(
                             f"### 거래 비율이 최소 비율보다 작기에 수정되었습니다: {percent * 100}% -> {min_trade_percent * 100}% ###")
                         percent = min_trade_percent
+                    if min_trade_percent > 0.5:
+                        logger.warning(
+                            f"### 소액 나머지를 남기지 않도록 전량 거래합니다: {percent * 100}% -> 100% ###")
+                        percent = 1.0
                 results = execute_trade(TICKER, decision, target_price, percent, balances)
                 logger.debug(results)
                 log_trade(results, reason)
