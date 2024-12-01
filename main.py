@@ -401,8 +401,8 @@ def get_current_price(ticker: str) -> float:
     return pyupbit.get_current_price(ticker)
 
 
-def get_order(ticker: str, state: str = None, **kwargs) -> dict:
-    return upbit.get_order(ticker, state, **kwargs) or {}
+def get_order(ticker_or_uuid: str, state: str = 'wait', **kwargs) -> dict:
+    return upbit.get_order(ticker_or_uuid, state, **kwargs) or {}
 
 
 def cancle_order(uuid):
@@ -419,10 +419,9 @@ def mainLoop(re_request_message: str | None = None):
         global first_run
         logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
 
-        for order in get_order(TICKER, get_last_buy_trade().get('uuid')):
-            if order['state'] == 'wait':
-                logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
-                cancle_order(order['uuid'])
+        if get_order(get_last_buy_trade().get('uuid')).get('state') == 'wait':
+            logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
+            cancle_order(get_last_buy_trade().get('uuid'))
 
         results = None
         next_trade_wait = 0

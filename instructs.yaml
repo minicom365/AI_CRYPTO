@@ -46,9 +46,7 @@ instruct_ko: |-
   ```json.
   {
     “decision"[str]: “매수” 또는 ‘매도’ 또는 ‘보류’. 물론 잔액이 0이면 거래할 수 없습니다.
-    “percent"[float]: 현재 보유량을 기준으로 매수/매도할 금액을 0.0에서 1.0 사이. 
-                      기본적으로 0.1 이하를 권장하지만 반드시 "min_trade_percent" 이상이어야 합니다. 
-                      만약 "min_trade_percent"가 0.1보다 크다면 이를 우선적으로 적용합니다.
+    “percent"[float]: 최소 min_trade_percent 부터 최대 1.0 사이입니다. 예상 수익률 퍼센테이지의 10배를 추천합니다.(예:예상수익 5% -> 50%구매)
     “reason"[str]: 현재 결정에 대한 기술적 이유.
     “next_trade_wait"[int|float]: 다음 쿼리 대기 시간(분)입니다.
     “target_price"[float]: 구매 가격. 일반적으로 시장가이지만, 주문장의 과열로 인한 거래 실패 또는 극도로 일시적인 변동의 영향을 피하기 위한 가격입니다.
@@ -106,9 +104,7 @@ instruct: |-
   ```json.
   {
     “decision"[str]: “Buy” or ‘Sell’ or ‘Hold’. Of course, you can't trade if the balance is zero.
-    “percent"[float]: Between 0.0 and 1.0, the amount to buy/sell based on your current holdings. 
-                      By default, we recommend 0.1 or less, but it must be at least “min_trade_percent”. 
-                      If “min_trade_percent” is greater than 0.1, it will be prioritized.
+    “percent"[float]: Between a minimum of min_trade_percent and a maximum of 1.0. 10 times the expected return percentage is preferred (e.g. expected return 5% -> 50% buy)
     “reason"[str]: Technical reason for the current decision.
     “next_trade_wait” [int|float]: The wait time for the next query, in minutes.
     “target_price"[float]: Buy price. Usually the market price, but a price to avoid the effects of failed trades or extremely temporary fluctuations due to overheating of the order book.
