@@ -5,5 +5,5 @@ key
 .vscode
 __pycache__
 tempCodeRunnerFile.py
-test.py
+test*
 config*

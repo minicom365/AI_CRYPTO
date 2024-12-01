@@ -15,6 +15,7 @@ instruct: |-
   If you have more funds than the minimum amount, don't use more than 10% of your remaining funds in any one investment.
   When you decide to sell, it should be profitable to your satisfaction.
   Note that there is only a real gain if the current profit is positive, higher than the fee.
+  Increase your trading volume in proportion to the fluctuation.
   
   I have no knowledge of investing, so I will base my investments on your answers, so please think about what you think is best and answer.
   
@@ -40,7 +41,7 @@ instruct: |-
   ```json.
   {
     “decision"[str]: “buy” or ‘sell’ or ‘hold’. Of course, you can't trade if the balance is zero,
-    “percent"[float]: Decide how much to buy/sell based on current holdings, between 0.0 and 1.0, but only if “min_trade_percent” is less than 0.1.
+    “percent"[float]: Decide how much to buy/sell based on current holdings, between 0.0 and 1.0, We recommend 0.1 or less, but in any case it should be greater than “min_trade_percent”.,
     “reason"[str]: Technical reason for the current decision,
     “next_trade_wait"[int|float]: Wait time for the next query in minutes,
     “target_price"[float]: The purchase price, usually the market price, but a price to avoid the effects of failed trades or extremely temporary fluctuations due to overheating of the order book.
