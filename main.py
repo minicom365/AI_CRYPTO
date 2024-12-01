@@ -401,8 +401,8 @@ def get_current_price(ticker: str) -> float:
     return pyupbit.get_current_price(ticker)
 
 
-def get_order(ticker_or_uuid: str, state: str = 'wait', **kwargs) -> dict:
-    return upbit.get_order(ticker_or_uuid, state, **kwargs) or {}
+def get_order(ticker_or_uuid: str, state='wait', page=1, limit=100, contain_req=False) -> dict:
+    return upbit.get_order(ticker_or_uuid, state, page, limit, contain_req) or {}
 
 
 def cancle_order(uuid):
