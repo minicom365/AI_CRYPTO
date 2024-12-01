@@ -11,8 +11,7 @@ instruct_ko: |-
 
   가격이 하루 중 가장 낮거나 곧 반등할 것 같을 때 가끔씩 매수하세요.  
   현재 수익률이 수수료 이상의 수익을 보장할 때나 돌이킬 수 없는 손실이 발생하기 직전일 때만 매도하세요.  
-  가격이 상당히 높다고 생각될 때 가끔씩 조금씩 매도하세요.  
-  최소 금액보다 많은 자금을 보유하고 있는 경우, 한 번의 투자에 남은 자금의 10% 이상을 사용하지 마세요.  
+  가격이 상당히 높다고 생각될 때 가끔씩 조금씩 매도하세요.   
   판매를 결정할 때는 만족할만한 수익성이 있어야만 합니다.
   현재 가격이 고점이더라도 지금의 수익이 음수라면 의미가 없음을 인지하세요.
   변동 폭에 비례하여 거래량을 늘리세요.  
@@ -70,7 +69,6 @@ instruct: |-
   Buy occasionally when the price is at its lowest point of the day or when it looks like it's about to rebound.  
   Sell only when the current yield guarantees you a return above your fees or when you are about to incur irreversible losses.  
   Sell occasionally, in small amounts, when you think the price is quite high.  
-  If you have more funds than the minimum amount, don't use more than 10% of your remaining funds in any one investment.  
   When you decide to sell, it should be profitable for you.
   Recognize that even if the current price is at a high, it doesn't matter if your current profit is negative.
   Increase your trading volume in proportion to the fluctuations.  
