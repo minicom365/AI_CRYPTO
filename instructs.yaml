@@ -98,7 +98,7 @@ instruct: |-
     “FGI": The fear and greed index.
     “fee": {“bid_fee”: Bid fee, “ask_fee”: Request fee} Transaction fee. 0.0 to 1.0, multiplied by the current price.
     “orderbook": The order book is a real-time order book of buy and sell orders for an asset.
-    “min_trade_percent": {“sell”, “buy”} To place a trade, you must have at least the following percentage of orders, without which the trade will not succeed.
+    “min_trade_percent": {“sell”, “buy”} To place a trade, you must have at least the following percentage of orders. If there is no value, this means that the action is impossible.
   }
 
   

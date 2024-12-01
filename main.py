@@ -456,9 +456,11 @@ def mainLoop(re_request_message=None):
             elif decision == "sell":
                 target_price = max(target_price, price)
             if not TEST_FLAG and decision != 'hold':
-                if percent < dataset["min_trade_percent"][decision]:
-                    percent = dataset["min_trade_percent"].get(decision, percent)
-                    logger.warning(f"### 거래 비율이 최소 비율보다 작기에 수정되었습니다: {percent * 100}% ###")
+                if min_trade_percent := dataset["min_trade_percent"][decision]:
+                    if percent < min_trade_percent:
+                        logger.warning(
+                            f"### 거래 비율이 최소 비율보다 작기에 수정되었습니다: {percent * 100}% -> {min_trade_percent * 100}% ###")
+                        percent = min_trade_percent
                 results = execute_trade(TICKER, decision, target_price, percent, balances)
                 logger.debug(results)
                 log_trade(results, reason)
