@@ -236,10 +236,10 @@ def ai_make_dataset(ticker: str, balances: dict) -> str:
     bid_fee, ask_fee = [get_chance(ticker)[x + "_fee"] for x in ['bid', 'ask']]
 
     bid_min_total, ask_min_total = [float(get_chance(ticker)['market'][x]['min_total']) for x in ['bid', 'ask']]
-    min_sell_percent = ceil(ask_min_total / (balances[ticker] * now_price) * 100) / 100 if balances[ticker] else None
+    min_sell_percent = ceil(ask_min_total / (balances[ticker] * now_price) * 1000) / 1000 if balances[ticker] else None
     min_sell_percent = None if min_sell_percent and min_sell_percent > 1 else min_sell_percent
 
-    min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY] * 100) / 100 if balances[UNIT_CURRENCY] else None
+    min_buy_percent = ceil(bid_min_total / balances[UNIT_CURRENCY] * 1000) / 1000 if balances[UNIT_CURRENCY] else None
     min_buy_percent = None if min_buy_percent and min_buy_percent > 1 else min_buy_percent
 
     return {
@@ -391,9 +391,9 @@ def log_trade(order_response, reason=None):
         logger.warning(f"### 거래 실패: {order_response} ###")  # 로그 작성
 
 
-def get_last_buy_trade() -> dict:
+def get_last_trade(type: str = None) -> dict:
     """마지막 구매 거래를 조회합니다."""
-    return next((trade for trade in reversed(trade_history) if trade['type'] == 'buy'), {})
+    return next((trade for trade in reversed(trade_history) if type and trade['type'] == type), {})
 
 
 def get_current_price(ticker: str) -> float:
@@ -418,10 +418,6 @@ def mainLoop(re_request_message: str | None = None):
     try:
         global first_run
         logger.info(f"### 사용 AI 모델: {config["ai"]["model"]} ###")
-
-        if get_order(get_last_buy_trade().get('uuid')).get('state') == 'wait':
-            logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
-            logger.debug(cancel_order(get_last_buy_trade().get('uuid')))
 
         results = None
         next_trade_wait = 0
@@ -522,6 +518,14 @@ def mainLoop(re_request_message: str | None = None):
         except:
             pass
 
+    pbar.close()  # Progress bar 닫기
+
+    # 직전 미체결 주문 취소
+    if get_order(get_last_trade().get('uuid')).get('state') == 'wait':
+        logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
+        logger.debug(cancel_order(get_last_trade().get('uuid')))
+
+    # 종료 사유에 따른 재시도 수행
     if exit_code == "alert_level_reached":
         if current_price > alert_price_high:
             logger.warning(f'### 가격 급상승 감지 --  ### {current_price} > {alert_price_high}')
@@ -540,8 +544,6 @@ def mainLoop(re_request_message: str | None = None):
         re_request_message = ''.join(
             [request_message, instructs['spliter'],
              str(ai_answer), instructs['spliter'], re_request_reason])
-
-    pbar.close()  # Progress bar 닫기
     mainLoop(re_request_message) if re_request_message else None
 
 
