@@ -393,7 +393,7 @@ def log_trade(order_response, reason=None):
 
 def get_last_trade(type: str = None) -> dict:
     """마지막 구매 거래를 조회합니다."""
-    return next((trade for trade in reversed(trade_history) if type and trade['type'] == type), {})
+    return next((trade for trade in reversed(trade_history) if (type and trade['type'] == type) or True), {})
 
 
 def get_current_price(ticker: str) -> float:
