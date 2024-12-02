@@ -405,7 +405,7 @@ def get_order(ticker_or_uuid: str, state='wait', page=1, limit=100, contain_req=
     return (upbit.get_order(ticker_or_uuid, state, page, limit, contain_req) or {}) if ticker_or_uuid else {}
 
 
-def cancle_order(uuid):
+def cancel_order(uuid):
     return upbit.cancel_order(uuid)
 
 
@@ -421,7 +421,7 @@ def mainLoop(re_request_message: str | None = None):
 
         if get_order(get_last_buy_trade().get('uuid')).get('state') == 'wait':
             logger.info(f"### 직전 거래가 체결되지 않아 취소하였습니다. ###")
-            cancle_order(get_last_buy_trade().get('uuid'))
+            logger.debug(cancel_order(get_last_buy_trade().get('uuid')))
 
         results = None
         next_trade_wait = 0
